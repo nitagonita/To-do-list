@@ -1,0 +1,184 @@
+/* ====== Reset ringan & layout ====== */
+* { box-sizing: border-box; }
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  line-height: 1.5;
+  margin: 24px;
+  background: #fafafa;
+  color: #222;
+}
+form, .todo-stats, #todo-list { max-width: 640px; margin-inline: auto; }
+
+/* ====== Form & Input ====== */
+#todo-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+#todo-input {
+  padding: 10px 12px;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+#todo-input:focus {
+  border-color: #6aa6ff;
+  box-shadow: 0 0 0 3px rgba(106,166,255,.25);
+}
+/* Feedback error via aria-invalid (dipasang JS) */
+#todo-input[aria-invalid="true"] {
+  border-color: #d33;
+  background: #ffe6e6;
+}
+
+/* ====== Error message global ====== */
+.error-message {
+  max-width: 640px; margin: 4px auto 12px;
+  font-size: .95rem;
+  color: #b00020;
+  padding: 8px 12px;
+  background: #fde8ea;
+  border: 1px solid #f4b5bb;
+  border-radius: 8px;
+  display: none;              /* default: sembunyikan */
+}
+.error-message.visible {      /* JS: classList.add('visible') */
+  display: block;
+}
+
+/* ====== Daftar Todo ====== */
+#todo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+#todo-list .empty-state {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+  background: #fff;
+  border: 1px dashed #ddd;
+  border-radius: 10px;
+}
+
+.todo-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto; /* checkbox | text | edit | delete */
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: 10px;
+  box-shadow: 0 1px 0 rgba(0,0,0,.02);
+  margin-bottom: 8px;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+.todo-item:hover { border-color: #dcdcdc; }
+
+/* Status completed (JS: li.classList.add('completed')) */
+.todo-item.completed [data-role="label"] {
+  color: #888;
+  text-decoration: line-through;
+}
+
+/* Mode editing (JS: li.classList.add('editing')) */
+.todo-item.editing {
+  background: #f7fbff;
+  border-color: #cfe4ff;
+}
+.todo-item .edit-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #cfcfcf;
+  border-radius: 6px;
+  font: inherit;
+}
+
+/* ====== Tombol ====== */
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #efefef;
+  transition: background-color .12s ease, transform .06s ease;
+}
+button:hover { background: #e6e6e6; }
+button:active { transform: translateY(1px); }
+
+.btn.btn-edit { background: #eef5ff; }
+.btn.btn-edit:hover { background: #e0edff; }
+
+.btn.btn-delete { background: #ffeef0; }
+.btn.btn-delete:hover { background: #ffe2e6; }
+
+/* ====== Footer / Stats & Filters ====== */
+.todo-stats {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+}
+#todo-count { color: #444; }
+
+.filter-buttons {
+  display: inline-flex;
+  gap: 6px;
+}
+.filter-btn {
+  padding: 6px 10px;
+  background: #f2f2f2;
+  border-radius: 20px;
+  font-size: .95rem;
+}
+.filter-btn.active {
+  background: #1f7aff;
+  color: #fff;
+}
+
+#clear-completed {
+  background: #f6f6f6;
+}
+#clear-completed:hover {
+  background: #f0f0f0;
+}
+
+/* ====== Inline error (saat edit) ====== */
+.inline-error {
+  grid-column: 2 / -1;     /* sejajarkan di kolom label hingga akhir */
+  margin-top: 4px;
+  font-size: .9rem;
+  color: #b00020;
+}
+
+/* ====== Aksesibilitas ====== */
+button:focus-visible,
+.filter-btn:focus-visible,
+#clear-completed:focus-visible,
+.edit-input:focus-visible {
+  outline: 3px solid rgba(106,166,255,.45);
+  outline-offset: 1px;
+}
+
+/* ====== Optional: dark mode ringan ====== */
+@media (prefers-color-scheme: dark) {
+  body { background: #0f1115; color: #e8e8e8; }
+  #todo-input { border-color: #3a3f4b; background: #151922; color: #e8e8e8; }
+  #todo-input:focus { box-shadow: 0 0 0 3px rgba(106,166,255,.3); }
+  .error-message { background: #3b0a10; border-color: #7a1f2a; color: #ffd5db; }
+  .todo-item { background: #141925; border-color: #232838; }
+  .todo-item:hover { border-color: #2b3042; }
+  .todo-item.completed [data-role="label"] { color: #a0a6b5; }
+  .btn.btn-edit { background: #11233d; }
+  .btn.btn-edit:hover { background: #0f2b56; }
+  .btn.btn-delete { background: #3a1520; }
+  .btn.btn-delete:hover { background: #4a1b28; }
+  .filter-btn { background: #1b2030; color: #d6d9e3; }
+  .filter-btn.active { background: #2d6bfd; color: #fff; }
+  #clear-completed { background: #1b2030; color: #d6d9e3; }
+  #clear-completed:hover { background: #23283a; }
+  .inline-error { color: #ffb9c2; }
+}

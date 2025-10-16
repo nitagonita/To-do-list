@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Todo (standalone)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; background:#fafafa; color:#222; }
+    form, .todo-stats, #todo-list { max-width: 640px; margin-inline: auto; }
+    #todo-form { display:grid; grid-template-columns:1fr auto; gap:8px; margin-bottom:12px; }
+    #todo-input { padding:10px 12px; border:1px solid #cfcfcf; border-radius:8px; outline:none; }
+    #todo-input[aria-invalid="true"] { border-color:#d33; background:#ffe6e6; }
+    .error-message { max-width:640px; margin:4px auto 12px; display:none; color:#b00020; background:#fde8ea; border:1px solid #f4b5bb; border-radius:8px; padding:8px 12px; }
+    .error-message.visible { display:block; }
+
+    #todo-list { list-style:none; padding:0; margin:0 0 16px; }
+    .todo-item { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:10px; padding:10px 12px; background:#fff; border:1px solid #e7e7e7; border-radius:10px; margin-bottom:8px; }
+    .todo-item.completed [data-role="label"] { color:#888; text-decoration: line-through; }
+    .empty-state { padding:16px; text-align:center; color:#666; background:#fff; border:1px dashed #ddd; border-radius:10px; }
+
+    button { cursor:pointer; border:none; border-radius:8px; padding:8px 12px; background:#efefef; }
+    .filter-buttons { display:inline-flex; gap:6px; }
+    .filter-btn { padding:6px 10px; background:#f2f2f2; border-radius:20px; }
+    .filter-btn.active { background:#1f7aff; color:#fff; }
+
+    .todo-stats { display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center; }
+    #debug-banner { position:fixed; right:12px; bottom:12px; padding:6px 10px; background:#222; color:#fff; border-radius:8px; font-size:12px; z-index:9999; }
+  </style>
+</head>
+<body>
+
+  <h1 style="text-align:center;margin:0 0 16px;">Todo List (Standalone)</h1>
+
+  <form id="todo-form">
+    <input type="text" id="todo-input" placeholder="Add a new todo..." />
+    <button type="submit">Add Todo</button>
+  </form>
+
+  <div id="error-message" class="error-message"></div>
+
+  <ul id="todo-list"></ul>
+
+  <div class="todo-stats">
+    <span id="todo-count">0 items remaining</span>
+    <div class="filter-buttons">
+      <button class="filter-btn active" data-filter="all" type="button">All</button>
+      <button class="filter-btn" data-filter="active" type="button">Active</button>
+      <button class="filter-btn" data-filter="completed" type="button">Completed</button>
+    </div>
+    <button id="clear-completed" type="button">Clear Completed</button>
+  </div>
+
+  <div id="debug-banner">JS LOADED: standalone-v1</div>
+
+  <script>
+    console.log("[BOOT] inline script loaded: standalone-v1");
+
+    // ====== STATE
+    let todos = [];
+    let currentFilter = 'all'; // 'all' | 'active' | 'completed'
+
+    // ====== DOM
+    const form  = document.querySelector('#todo-form');
+    const input = document.querySelector('#todo-input');
+    const listEl = document.querySelector('#todo-list');
+    const countEl = document.querySelector('#todo-count');
+    const errorMessage = document.querySelector('#error-message');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const clearCompletedBtn = document.querySelector('#clear-completed');
+
+    // sanity check
+    console.log("[CHECK] form:", !!form, "input:", !!input, "list:", !!listEl);
+
+    // ====== EVENTS
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      console.log("[EVENT] submit");
+      const text = input.value.trim();
+
+      if (!text) {
+        showError('Todo cannot be empty!');
+        input.style.border = '2px solid red';
+        input.setAttribute('aria-invalid', 'true');
+        return;
+      }
+      clearError();
+      input.style.border = '';
+      input.removeAttribute('aria-invalid');
+
+      todos.push({ id: String(Date.now()), text, completed: false, createdAt: Date.now() });
+      input.value = '';
+      render();
+    });
+
+    listEl.addEventListener('change', (e) => {
+      if (e.target.matches('input[type="checkbox"][data-action="toggle"]')) {
+        const li = e.target.closest('li[data-id]');
+        const id = li.dataset.id;
+        const t = todos.find(t => t.id === id);
+        if (t) t.completed = e.target.checked;
+        console.log("[EVENT] toggle", id, "=>", t && t.completed);
+        render();
+      }
+    });
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelector('.filter-btn.active')?.classList.remove('active');
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter; // all | active | completed
+        console.log("[EVENT] filter ->", currentFilter);
+        render();
+      });
+    });
+
+    clearCompletedBtn.addEventListener('click', () => {
+      const before = todos.length;
+      todos = todos.filter(t => !t.completed);
+      console.log("[EVENT] clear completed", before, "=>", todos.length);
+      render();
+    });
+
+    // ====== RENDER
+    function render() {
+      let visible = todos;
+      if (currentFilter === 'active') visible = todos.filter(t => !t.completed);
+      if (currentFilter === 'completed') visible = todos.filter(t => t.completed);
+
+      listEl.innerHTML = '';
+      if (visible.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'empty-state';
+        li.textContent = 'No todos here — add one!';
+        listEl.appendChild(li);
+      } else {
+        visible.forEach(t => listEl.appendChild(makeItem(t)));
+      }
+
+      const remaining = todos.filter(t => !t.completed).length;
+      countEl.textContent = `${remaining} item${remaining !== 1 ? 's' : ''} remaining`;
+
+      console.log("[RENDER]", { total: todos.length, visible: visible.length, filter: currentFilter });
+    }
+
+    function makeItem(todo) {
+      const li = document.createElement('li');
+      li.className = 'todo-item' + (todo.completed ? ' completed' : '');
+      li.dataset.id = todo.id;
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = todo.completed;
+      checkbox.setAttribute('data-action', 'toggle');
+
+      const label = document.createElement('span');
+      label.setAttribute('data-role', 'label');
+      label.textContent = todo.text;
+
+      li.appendChild(checkbox);
+      li.appendChild(label);
+      return li;
+    }
+
+    // ====== FEEDBACK
+    function showError(msg) {
+      errorMessage.textContent = msg;
+      errorMessage.classList.add('visible');
+    }
+    function clearError() {
+      errorMessage.textContent = '';
+      errorMessage.classList.remove('visible');
+    }
+
+    // initial render
+    render();
+  </script>
+</body>
+</html>
